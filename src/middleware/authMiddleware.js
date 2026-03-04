@@ -1,16 +1,29 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
+const protect = async (req, res, next) => {
+  let token;
 
-// 1. Extract token from Authorization header
-// 2. Verify token
-// 3. Find user
-// 4. Attach user to req.user
-// 5. Call next()
-// 6. If invalid → return 401
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    try {
+      token = req.headers.authorization.split(" ")[1];
 
-const authMiddleware = async (req, res, next) => {
-  //  implement here
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      req.user = await User.findById(decoded.id).select("-password");
+
+     return next();
+    } catch (error) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+  }
+
+  if (!token) {
+    return res.status(401).json({ message: "No token provided" });
+  }
 };
 
-export default authMiddleware;
+export default protect;
